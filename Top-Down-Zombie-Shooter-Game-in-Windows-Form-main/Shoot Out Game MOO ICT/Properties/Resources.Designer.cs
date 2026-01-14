@@ -159,5 +159,13 @@ namespace Shoot_Out_Game_MOO_ICT.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        internal static System.Drawing.Bitmap health_pack
+        {
+            get
+            {
+                object obj = ResourceManager.GetObject("health_pack", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }

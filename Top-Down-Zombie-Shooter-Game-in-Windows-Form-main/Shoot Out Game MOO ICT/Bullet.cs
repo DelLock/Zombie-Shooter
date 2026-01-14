@@ -22,9 +22,8 @@ namespace Shoot_Out_Game_MOO_ICT
 
         public void MakeBullet(Form form)
         {
-
             bullet.BackColor = Color.White;
-            bullet.Size = new Size(5,5);
+            bullet.Size = new Size(5, 5);
             bullet.Tag = "bullet";
             bullet.Left = bulletLeft;
             bullet.Top = bulletTop;
@@ -32,16 +31,13 @@ namespace Shoot_Out_Game_MOO_ICT
 
             form.Controls.Add(bullet);
 
-
             bulletTimer.Interval = speed;
             bulletTimer.Tick += new EventHandler(BulletTimerEvent);
             bulletTimer.Start();
-
         }
 
         private void BulletTimerEvent(object sender, EventArgs e)
         {
-
             if (direction == "left")
             {
                 bullet.Left -= speed;
@@ -62,8 +58,8 @@ namespace Shoot_Out_Game_MOO_ICT
                 bullet.Top += speed;
             }
 
-
-            if (bullet.Left < 10 || bullet.Left > 860 || bullet.Top < 10 || bullet.Top > 600)
+            // Увеличенные границы для большой карты
+            if (bullet.Left < 10 || bullet.Left > 1580 || bullet.Top < 10 || bullet.Top > 880)
             {
                 bulletTimer.Stop();
                 bulletTimer.Dispose();
@@ -71,12 +67,6 @@ namespace Shoot_Out_Game_MOO_ICT
                 bulletTimer = null;
                 bullet = null;
             }
-
-
-
         }
-
-
-
     }
 }
