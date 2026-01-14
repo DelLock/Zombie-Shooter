@@ -96,4 +96,3 @@ Visual Studio 2019 или новее
 Интуитивно понятный интерфейс
 
 Контрастные цвета для лучшей видимости
-https://www.mooict.com/c-tutorial-create-a-zombie-survival-shooting-game-in-visual-studio/
