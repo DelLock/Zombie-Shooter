@@ -16,7 +16,8 @@ namespace Shoot_Out_Game_MOO_ICT
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+
+            Application.Run(new MainMenuForm());
         }
     }
 }
