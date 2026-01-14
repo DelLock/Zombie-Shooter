@@ -17,26 +17,27 @@ namespace Shoot_Out_Game_MOO_ICT
         int playerHealth = 100;
         int speed = 10;
         int ammo = 10;
-        int zombieSpeed = 3;
+        double zombieSpeed = 3.0;
         Random randNum = new Random();
         int score;
         List<PictureBox> zombiesList = new List<PictureBox>();
 
-        // Волновая система (все в миллисекундах, т.к. таймер срабатывает каждые 20 мс)
+        // Волновая система
         private int wave = 1;
-        private int waveTime = 60000; // 60 секунд = 60000 миллисекунд (60 * 1000 / 20)
-        private int waveTimer = 0;    // Каждый тик = 20 мс
+        private int waveTime = 60000;
+        private int waveTimer = 0;
         private bool isResting = false;
-        private int restTime = 20000; // 20 секунд = 20000 миллисекунд (20 * 1000 / 20)
+        private int restTime = 15000;
         private int restTimer = 0;
         private int zombieCount = 3;
         private int maxZombies = 15;
         private bool normalAmmoSpawn = true;
 
-        // UI элементы для волн
+        // UI элементы
         private Label txtWave;
         private Label txtTime;
         private Label txtRest;
+        private Label txtMessage;
         private List<PictureBox> ammoBoxes = new List<PictureBox>();
         private List<PictureBox> healthBoxes = new List<PictureBox>();
 
@@ -44,6 +45,7 @@ namespace Shoot_Out_Game_MOO_ICT
         {
             InitializeComponent();
             InitializeWaveLabels();
+            InitializeMessageLabel();
             RestartGame();
         }
 
@@ -75,15 +77,46 @@ namespace Shoot_Out_Game_MOO_ICT
             txtRest.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
             txtRest.ForeColor = Color.Cyan;
             txtRest.Location = new Point(500, 13);
-            txtRest.Text = "Rest: 20";
+            txtRest.Text = "Rest: 15";
             txtRest.Visible = false;
             this.Controls.Add(txtRest);
             txtRest.BringToFront();
         }
 
+        private void InitializeMessageLabel()
+        {
+            txtMessage = new Label();
+            txtMessage.AutoSize = false;
+            txtMessage.Font = new Font("Microsoft Sans Serif", 24F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
+            txtMessage.ForeColor = Color.White;
+            txtMessage.BackColor = Color.FromArgb(150, 0, 0, 0);
+            txtMessage.Size = new Size(600, 100);
+            txtMessage.Location = new Point(500, 300);
+            txtMessage.TextAlign = ContentAlignment.MiddleCenter;
+            txtMessage.Visible = false;
+            this.Controls.Add(txtMessage);
+            txtMessage.BringToFront();
+        }
+
+        private void ShowMessage(string message, int duration = 2000)
+        {
+            txtMessage.Text = message;
+            txtMessage.Visible = true;
+            txtMessage.BringToFront();
+
+            Timer messageTimer = new Timer();
+            messageTimer.Interval = duration;
+            messageTimer.Tick += (s, e) => {
+                txtMessage.Visible = false;
+                messageTimer.Stop();
+                messageTimer.Dispose();
+            };
+            messageTimer.Start();
+        }
+
         private void MainTimerEvent(object sender, EventArgs e)
         {
-            // Обновление таймеров волн (GameTimer.Interval = 20 мс)
+            // Обновление таймеров волн
             UpdateWaveTimers();
 
             if (playerHealth > 1)
@@ -95,8 +128,7 @@ namespace Shoot_Out_Game_MOO_ICT
                 gameOver = true;
                 player.Image = Properties.Resources.dead;
                 GameTimer.Stop();
-                MessageBox.Show($"Game Over! You survived {wave - 1} waves with {score} kills!", "Game Over",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ShowMessage($"Game Over!\nSurvived {wave - 1} waves\nKills: {score}", 5000);
                 return;
             }
 
@@ -105,7 +137,7 @@ namespace Shoot_Out_Game_MOO_ICT
             txtWave.Text = "Wave: " + wave;
 
             // Отображаем время в секундах
-            int timeLeftInSeconds = (waveTime - waveTimer) / 50; // 1000 мс / 20 мс = 50
+            int timeLeftInSeconds = (waveTime - waveTimer) / 50;
             txtTime.Text = "Time: " + Math.Max(0, timeLeftInSeconds);
 
             // Движение игрока
@@ -149,52 +181,95 @@ namespace Shoot_Out_Game_MOO_ICT
         {
             if (!isResting && !gameOver)
             {
-                waveTimer += 20; // Каждый тик = 20 мс
+                waveTimer += 20;
 
                 if (waveTimer >= waveTime)
                 {
-                    // Волна завершена
-                    isResting = true;
-                    restTimer = 0;
-                    normalAmmoSpawn = false;
-                    txtRest.Visible = true;
-
-                    // Полностью очищаем карту
-                    ClearAllGameObjects();
-
-                    // Спавним предметы для отдыха
-                    SpawnRestItems();
+                    CompleteWave();
                 }
             }
             else if (isResting && !gameOver)
             {
-                restTimer += 20; // Каждый тик = 20 мс
+                restTimer += 20;
 
                 // Отображаем время отдыха в секундах
-                int restTimeLeftInSeconds = (restTime - restTimer) / 50; // 1000 мс / 20 мс = 50
+                int restTimeLeftInSeconds = (restTime - restTimer) / 50;
                 txtRest.Text = "Rest: " + Math.Max(0, restTimeLeftInSeconds);
 
                 if (restTimer >= restTime)
                 {
-                    // Полностью очищаем карту перед новой волной
-                    ClearAllGameObjects();
-
-                    // Начинаем новую волну
-                    isResting = false;
-                    waveTimer = 0;
-                    wave++;
-                    waveTime += 10000; // +10 секунд = 10000 миллисекунд
-                    zombieSpeed++; // Увеличиваем скорость зомби
-                    zombieCount = Math.Min(3 + wave, maxZombies); // Увеличиваем количество зомби
-                    normalAmmoSpawn = true;
-                    txtRest.Visible = false;
-
-                    // Спавним зомби для новой волны
-                    for (int i = 0; i < zombieCount; i++)
-                    {
-                        MakeZombies();
-                    }
+                    StartNewWave();
                 }
+            }
+        }
+
+        private void SkipCurrentWave()
+        {
+            if (!gameOver && !isResting)
+            {
+                // МГНОВЕННО завершаем волну
+                waveTimer = waveTime;
+                CompleteWave();
+            }
+        }
+
+        private void SkipCurrentRest()
+        {
+            if (!gameOver && isResting)
+            {
+                // МГНОВЕННО пропускаем отдых
+                restTimer = restTime;
+                StartNewWave();
+            }
+        }
+
+        private void CompleteWave()
+        {
+            // Волна завершена
+            isResting = true;
+            restTimer = 0;
+            normalAmmoSpawn = false;
+            txtRest.Visible = true;
+
+            // Показываем сообщение о завершении волны
+            ShowMessage($"Wave {wave} Complete!");
+
+            // Полностью очищаем карту
+            ClearAllGameObjects();
+
+            // Спавним предметы для отдыха
+            SpawnRestItems();
+        }
+
+        private void StartNewWave()
+        {
+            // Полностью очищаем карту перед новой волной
+            ClearAllGameObjects();
+
+            // Начинаем новую волну
+            isResting = false;
+            waveTimer = 0;
+            wave++;
+
+            // Увеличиваем время волны на 10 секунд
+            waveTime += 10000;
+
+            // Увеличиваем скорость зомби на 0.3
+            zombieSpeed += 0.3;
+
+            // Увеличиваем количество зомби
+            zombieCount = Math.Min(3 + wave, maxZombies);
+
+            normalAmmoSpawn = true;
+            txtRest.Visible = false;
+
+            // Показываем сообщение о начале новой волны
+            ShowMessage($"Wave {wave} Started!");
+
+            // Спавним зомби для новой волны
+            for (int i = 0; i < zombieCount; i++)
+            {
+                MakeZombies();
             }
         }
 
@@ -202,12 +277,12 @@ namespace Shoot_Out_Game_MOO_ICT
         {
             // Спавним аптечку (полное восстановление)
             PictureBox healthPack = new PictureBox();
-            healthPack.Image = Properties.Resources.up; // Временный спрайт
+            healthPack.Image = Properties.Resources.up;
             healthPack.BackColor = Color.Lime;
             healthPack.Size = new Size(40, 40);
             healthPack.SizeMode = PictureBoxSizeMode.StretchImage;
-            healthPack.Left = randNum.Next(50, this.ClientSize.Width - 90);
-            healthPack.Top = randNum.Next(100, this.ClientSize.Height - 90);
+            healthPack.Left = randNum.Next(100, this.ClientSize.Width - 140);
+            healthPack.Top = randNum.Next(150, this.ClientSize.Height - 140);
             healthPack.Tag = "health";
             this.Controls.Add(healthPack);
             healthPack.BringToFront();
@@ -219,17 +294,30 @@ namespace Shoot_Out_Game_MOO_ICT
                 PictureBox ammoBox = new PictureBox();
                 ammoBox.Image = Properties.Resources.ammo_Image;
                 ammoBox.SizeMode = PictureBoxSizeMode.AutoSize;
-                ammoBox.Left = randNum.Next(50, this.ClientSize.Width - ammoBox.Width - 50);
-                ammoBox.Top = randNum.Next(100, this.ClientSize.Height - ammoBox.Height - 50);
-                ammoBox.Tag = "ammo";
-                this.Controls.Add(ammoBox);
-                ammoBox.BringToFront();
-                ammoBoxes.Add(ammoBox);
-            }
 
-            // Выводим сообщение о завершении волны
-            MessageBox.Show($"Wave {wave} completed!\nGet ready for wave {wave + 1} in 20 seconds.",
-                "Wave Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                int x = randNum.Next(50, this.ClientSize.Width - 100);
+                int y = randNum.Next(100, this.ClientSize.Height - 100);
+
+                bool validPosition = true;
+                foreach (PictureBox existingAmmo in ammoBoxes)
+                {
+                    if (Math.Abs(x - existingAmmo.Left) < 50 && Math.Abs(y - existingAmmo.Top) < 50)
+                    {
+                        validPosition = false;
+                        break;
+                    }
+                }
+
+                if (validPosition)
+                {
+                    ammoBox.Left = x;
+                    ammoBox.Top = y;
+                    ammoBox.Tag = "ammo";
+                    this.Controls.Add(ammoBox);
+                    ammoBox.BringToFront();
+                    ammoBoxes.Add(ammoBox);
+                }
+            }
         }
 
         private void ProcessCollisions()
@@ -256,8 +344,7 @@ namespace Shoot_Out_Game_MOO_ICT
                         toRemove.Add(x);
                         playerHealth = 100;
                         healthBar.Value = playerHealth;
-                        MessageBox.Show("Health fully restored!", "Health Pack",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ShowMessage("Health Restored!");
                     }
                 }
             }
@@ -285,27 +372,28 @@ namespace Shoot_Out_Game_MOO_ICT
                 playerHealth -= 1;
             }
 
-            // Зомби двигаются только не во время отдыха
             if (!isResting)
             {
+                int moveSpeed = (int)Math.Round(zombieSpeed);
+
                 if (zombie.Left > player.Left)
                 {
-                    zombie.Left -= zombieSpeed;
+                    zombie.Left -= moveSpeed;
                     zombie.Image = Properties.Resources.zleft;
                 }
                 if (zombie.Left < player.Left)
                 {
-                    zombie.Left += zombieSpeed;
+                    zombie.Left += moveSpeed;
                     zombie.Image = Properties.Resources.zright;
                 }
                 if (zombie.Top > player.Top)
                 {
-                    zombie.Top -= zombieSpeed;
+                    zombie.Top -= moveSpeed;
                     zombie.Image = Properties.Resources.zup;
                 }
                 if (zombie.Top < player.Top)
                 {
-                    zombie.Top += zombieSpeed;
+                    zombie.Top += moveSpeed;
                     zombie.Image = Properties.Resources.zdown;
                 }
             }
@@ -335,7 +423,6 @@ namespace Shoot_Out_Game_MOO_ICT
                 }
             }
 
-            // Удаляем пули и зомби
             foreach (Control bullet in bulletsToRemove)
             {
                 this.Controls.Remove(bullet);
@@ -348,7 +435,6 @@ namespace Shoot_Out_Game_MOO_ICT
                 zombie.Dispose();
                 zombiesList.Remove((PictureBox)zombie);
 
-                // Спавним нового зомби, если не время отдыха
                 if (!isResting && zombiesList.Count < zombieCount)
                 {
                     MakeZombies();
@@ -398,16 +484,6 @@ namespace Shoot_Out_Game_MOO_ICT
             }
         }
 
-        private void ClearAllZombies()
-        {
-            foreach (PictureBox zombie in zombiesList.ToList())
-            {
-                this.Controls.Remove(zombie);
-                zombie.Dispose();
-            }
-            zombiesList.Clear();
-        }
-
         private void KeyIsDown(object sender, KeyEventArgs e)
         {
             if (gameOver == true)
@@ -415,69 +491,87 @@ namespace Shoot_Out_Game_MOO_ICT
                 return;
             }
 
-            if (e.KeyCode == Keys.Left)
+            // Управление стрелками ИЛИ WASD
+            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
             {
                 goLeft = true;
                 facing = "left";
                 player.Image = Properties.Resources.left;
             }
 
-            if (e.KeyCode == Keys.Right)
+            if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
             {
                 goRight = true;
                 facing = "right";
                 player.Image = Properties.Resources.right;
             }
 
-            if (e.KeyCode == Keys.Up)
+            if (e.KeyCode == Keys.Up || e.KeyCode == Keys.W)
             {
                 goUp = true;
                 facing = "up";
                 player.Image = Properties.Resources.up;
             }
 
-            if (e.KeyCode == Keys.Down)
+            if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
             {
                 goDown = true;
                 facing = "down";
                 player.Image = Properties.Resources.down;
             }
+
+            // Пропуск волны/отдыха по клавише + (Numpad + или обычный +)
+            if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
+            {
+                if (!isResting && !gameOver)
+                {
+                    // МГНОВЕННО пропускаем волну
+                    SkipCurrentWave();
+                }
+                else if (isResting && !gameOver)
+                {
+                    // МГНОВЕННО пропускаем отдых
+                    SkipCurrentRest();
+                }
+            }
         }
 
         private void KeyIsUp(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Left)
+            // Управление стрелками ИЛИ WASD
+            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
             {
                 goLeft = false;
             }
 
-            if (e.KeyCode == Keys.Right)
+            if (e.KeyCode == Keys.Right || e.KeyCode == Keys.D)
             {
                 goRight = false;
             }
 
-            if (e.KeyCode == Keys.Up)
+            if (e.KeyCode == Keys.Up || e.KeyCode == Keys.W)
             {
                 goUp = false;
             }
 
-            if (e.KeyCode == Keys.Down)
+            if (e.KeyCode == Keys.Down || e.KeyCode == Keys.S)
             {
                 goDown = false;
             }
 
+            // Стрельба пробелом
             if (e.KeyCode == Keys.Space && ammo > 0 && gameOver == false)
             {
                 ammo--;
                 ShootBullet(facing);
 
-                // Только во время активной волны спавним патроны иногда
                 if (ammo < 5 && normalAmmoSpawn && randNum.Next(1, 10) > 7 && !isResting)
                 {
                     DropAmmo();
                 }
             }
 
+            // Перезапуск игры
             if (e.KeyCode == Keys.Enter && gameOver == true)
             {
                 RestartGame();
@@ -499,17 +593,15 @@ namespace Shoot_Out_Game_MOO_ICT
             zombie.Tag = "zombie";
             zombie.Image = Properties.Resources.zdown;
 
-            // Спавним зомби подальше от игрока
             int spawnX, spawnY;
             int attempts = 0;
             do
             {
-                spawnX = randNum.Next(50, this.ClientSize.Width - 100);
-                spawnY = randNum.Next(100, this.ClientSize.Height - 100);
+                spawnX = randNum.Next(100, this.ClientSize.Width - 150);
+                spawnY = randNum.Next(150, this.ClientSize.Height - 150);
                 attempts++;
 
-                // Если не можем найти место далеко от игрока, просто выбираем случайное
-                if (attempts > 50) break;
+                if (attempts > 30) break;
 
             } while (Math.Abs(spawnX - player.Left) < 300 && Math.Abs(spawnY - player.Top) < 300);
 
@@ -528,9 +620,11 @@ namespace Shoot_Out_Game_MOO_ICT
             PictureBox ammoBox = new PictureBox();
             ammoBox.Image = Properties.Resources.ammo_Image;
             ammoBox.SizeMode = PictureBoxSizeMode.AutoSize;
-            ammoBox.Left = randNum.Next(50, this.ClientSize.Width - ammoBox.Width - 50);
-            ammoBox.Top = randNum.Next(100, this.ClientSize.Height - ammoBox.Height - 50);
+
+            ammoBox.Left = randNum.Next(100, this.ClientSize.Width - 150);
+            ammoBox.Top = randNum.Next(150, this.ClientSize.Height - 150);
             ammoBox.Tag = "ammo";
+
             this.Controls.Add(ammoBox);
             ammoBoxes.Add(ammoBox);
 
@@ -547,20 +641,22 @@ namespace Shoot_Out_Game_MOO_ICT
 
             // Сброс волновой системы
             wave = 1;
-            waveTime = 60000; // 60 секунд
+            waveTime = 60000;
             waveTimer = 0;
             isResting = false;
             restTimer = 0;
-            zombieSpeed = 3;
+            zombieSpeed = 3.0;
             zombieCount = 3;
             normalAmmoSpawn = true;
+
             if (txtRest != null)
             {
                 txtRest.Visible = false;
-                txtRest.Text = "Rest: 20";
+                txtRest.Text = "Rest: 15";
             }
             if (txtTime != null) txtTime.Text = "Time: 60";
             if (txtWave != null) txtWave.Text = "Wave: 1";
+            if (txtMessage != null) txtMessage.Visible = false;
 
             // Спавним начальных зомби
             for (int i = 0; i < zombieCount; i++)
@@ -578,6 +674,9 @@ namespace Shoot_Out_Game_MOO_ICT
             healthBar.Value = 100;
             score = 0;
             ammo = 10;
+
+            // Показываем приветственное сообщение
+            ShowMessage("Get Ready!\nWave 1 Starting...", 2000);
 
             GameTimer.Start();
         }

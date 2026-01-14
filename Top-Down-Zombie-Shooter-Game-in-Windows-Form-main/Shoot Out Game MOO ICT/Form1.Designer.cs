@@ -92,7 +92,7 @@
             // GameTimer
             // 
             this.GameTimer.Enabled = true;
-            this.GameTimer.Interval = 20; // 20 миллисекунд = 50 FPS
+            this.GameTimer.Interval = 20;
             this.GameTimer.Tick += new System.EventHandler(this.MainTimerEvent);
             // 
             // Form1
@@ -107,7 +107,7 @@
             this.Controls.Add(this.txtScore);
             this.Controls.Add(this.txtAmmo);
             this.Name = "Form1";
-            this.Text = "Zombie Shootout Game - Wave System";
+            this.Text = "Zombie Shootout - WASD/Arrows to move";
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.KeyIsDown);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.KeyIsUp);
             ((System.ComponentModel.ISupportInitialize)(this.player)).EndInit();
