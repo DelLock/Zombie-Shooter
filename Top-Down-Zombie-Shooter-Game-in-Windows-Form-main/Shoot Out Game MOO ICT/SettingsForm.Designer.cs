@@ -74,7 +74,7 @@ namespace Shoot_Out_Game_MOO_ICT
             this.label2.ForeColor = System.Drawing.Color.White;
             this.label2.Location = new System.Drawing.Point(30, 83);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(114, 24);
+            this.label2.Size = new System.Drawing.Size(104, 24);
             this.label2.TabIndex = 2;
             this.label2.Text = "Resolution:";
             // 
@@ -93,11 +93,11 @@ namespace Shoot_Out_Game_MOO_ICT
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
             this.label3.ForeColor = System.Drawing.Color.White;
-            this.label3.Location = new System.Drawing.Point(80, 145);
+            this.label3.Location = new System.Drawing.Point(30, 145);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(64, 24);
+            this.label3.Size = new System.Drawing.Size(101, 24);
             this.label3.TabIndex = 4;
-            this.label3.Text = "Color:";
+            this.label3.Text = "Safe room:";
             // 
             // colorPreview
             // 
@@ -114,7 +114,7 @@ namespace Shoot_Out_Game_MOO_ICT
             this.lblColorHex.ForeColor = System.Drawing.Color.White;
             this.lblColorHex.Location = new System.Drawing.Point(217, 185);
             this.lblColorHex.Name = "lblColorHex";
-            this.lblColorHex.Size = new System.Drawing.Size(120, 17);
+            this.lblColorHex.Size = new System.Drawing.Size(102, 17);
             this.lblColorHex.TabIndex = 6;
             this.lblColorHex.Text = "RGB: 0, 100, 0";
             // 

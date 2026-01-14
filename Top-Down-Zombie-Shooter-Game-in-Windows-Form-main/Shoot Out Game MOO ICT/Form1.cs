@@ -35,12 +35,12 @@ namespace Shoot_Out_Game_MOO_ICT
         private bool normalAmmoSpawn = true;
         private bool giantSpawnedThisWave = false;
         private int ammoSpawnTimer = 0;
-        private int nextAmmoSpawnTime = 0;
+        private int nextAmmoSpawnTime = 5000; // 5 СЕКУНД - САМОЕ ВАЖНОЕ ИСПРАВЛЕНИЕ
         private int giantSpawnAttempts = 0;
 
         // Цвета
         private Color normalBackground = Color.FromArgb(64, 64, 64);
-        private Color restBackground = Color.FromArgb(0, 100, 0); // Темно-зеленый по умолчанию
+        private Color restBackground = Color.FromArgb(0, 100, 0);
 
         // UI элементы
         private Label txtWave;
@@ -61,36 +61,91 @@ namespace Shoot_Out_Game_MOO_ICT
             // Получаем цвет комнаты отдыха из настроек
             restBackground = MainMenuForm.RestRoomColor;
 
+            UpdateTextPositionsForResolution();  // ВАЖНО: Вызываем обновление позиций текста
             InitializeWaveLabels();
             InitializeMessageLabel();
             RestartGame();
         }
 
+        private void UpdateTextPositionsForResolution()
+        {
+            int width = this.ClientSize.Width;
+
+            if (txtAmmo != null)
+            {
+                txtAmmo.Location = new Point(20, 15);
+                txtAmmo.Font = new Font("Microsoft Sans Serif", GetFontSizeForResolution(), FontStyle.Bold);
+            }
+
+            if (txtScore != null)
+            {
+                txtScore.Location = new Point(width / 3, 15);
+                txtScore.Font = new Font("Microsoft Sans Serif", GetFontSizeForResolution(), FontStyle.Bold);
+            }
+
+            if (label1 != null)
+            {
+                label1.Location = new Point(width * 2 / 3, 15);
+                label1.Font = new Font("Microsoft Sans Serif", GetFontSizeForResolution(), FontStyle.Bold);
+            }
+
+            if (healthBar != null)
+            {
+                healthBar.Location = new Point(width * 2 / 3 + 80, 15);
+                healthBar.Width = width / 8;
+            }
+
+            if (player != null && this.ClientSize.Width > 0)
+            {
+                player.Location = new Point(width / 2 - player.Width / 2,
+                                           this.ClientSize.Height / 2 - player.Height / 2);
+            }
+        }
+
+        private float GetFontSizeForResolution()
+        {
+            int width = this.ClientSize.Width;
+
+            if (width < 1200) return 12.0f;
+            if (width < 1400) return 13.0f;
+            if (width < 1600) return 14.0f;
+            if (width < 1800) return 15.0f;
+            return 16.0f;
+        }
+
         private void InitializeWaveLabels()
         {
+            int width = this.ClientSize.Width;
+
+            if (txtWave != null) this.Controls.Remove(txtWave);
+            if (txtTime != null) this.Controls.Remove(txtTime);
+            if (txtRest != null) this.Controls.Remove(txtRest);
+
+            float fontSize = GetFontSizeForResolution();
+
             txtWave = new Label();
             txtWave.AutoSize = true;
-            txtWave.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
+            txtWave.Font = new Font("Microsoft Sans Serif", fontSize, FontStyle.Bold);
             txtWave.ForeColor = Color.Yellow;
-            txtWave.Location = new Point(this.ClientSize.Width / 2 - 200, 13);
+            txtWave.Location = new Point(width / 4 - 50, 45);
             txtWave.Text = "Wave: 1";
             this.Controls.Add(txtWave);
             txtWave.BringToFront();
 
             txtTime = new Label();
             txtTime.AutoSize = true;
-            txtTime.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
+            txtTime.Font = new Font("Microsoft Sans Serif", fontSize, FontStyle.Bold);
             txtTime.ForeColor = Color.LightGreen;
-            txtTime.Location = new Point(this.ClientSize.Width / 2 - 50, 13);
+            txtTime.Location = new Point(width / 2 - 50, 45);
             txtTime.Text = "Time: 60";
             this.Controls.Add(txtTime);
             txtTime.BringToFront();
 
             txtRest = new Label();
             txtRest.AutoSize = true;
-            txtRest.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
+            txtRest.Font = new Font("Microsoft Sans Serif", fontSize, FontStyle.Bold);
             txtRest.ForeColor = Color.Cyan;
-            txtRest.Location = new Point(this.ClientSize.Width / 2 + 100, 13);
+            txtRest.Location = new Point(width * 3 / 4 - 50, 45);
             txtRest.Text = "Rest: 15";
             txtRest.Visible = false;
             this.Controls.Add(txtRest);
@@ -101,7 +156,7 @@ namespace Shoot_Out_Game_MOO_ICT
         {
             txtMessage = new Label();
             txtMessage.AutoSize = false;
-            txtMessage.Font = new Font("Microsoft Sans Serif", 24F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
+            txtMessage.Font = new Font("Microsoft Sans Serif", 24F, FontStyle.Bold);
             txtMessage.ForeColor = Color.White;
             txtMessage.BackColor = Color.FromArgb(150, 0, 0, 0);
             txtMessage.Size = new Size(600, 100);
@@ -131,6 +186,7 @@ namespace Shoot_Out_Game_MOO_ICT
         private void MainTimerEvent(object sender, EventArgs e)
         {
             UpdateWaveTimers();
+
             UpdateAmmoSpawn();
 
             if (playerHealth > 1)
@@ -195,7 +251,6 @@ namespace Shoot_Out_Game_MOO_ICT
 
             UpdateDisplayOrder();
 
-            // Меняем цвет фона во время отдыха
             if (isResting && this.BackColor != restBackground)
             {
                 this.BackColor = restBackground;
@@ -208,16 +263,16 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void UpdateAmmoSpawn()
         {
-            if (!isResting && normalAmmoSpawn && ammo < 10)
+            if (!isResting && normalAmmoSpawn && ammo < 15)
             {
                 ammoSpawnTimer += 20;
 
                 if (ammoSpawnTimer >= nextAmmoSpawnTime)
                 {
                     ammoSpawnTimer = 0;
-                    nextAmmoSpawnTime = randNum.Next(5000, 10000);
+                    nextAmmoSpawnTime = 5000;
 
-                    if (ammoBoxes.Count < 5)
+                    if (ammoBoxes.Count < 3)
                     {
                         DropAmmo();
                     }
@@ -246,10 +301,16 @@ namespace Shoot_Out_Game_MOO_ICT
             }
 
             player.BringToFront();
-            txtWave.BringToFront();
-            txtTime.BringToFront();
-            txtRest.BringToFront();
-            txtMessage.BringToFront();
+
+            if (txtWave != null) txtWave.BringToFront();
+            if (txtTime != null) txtTime.BringToFront();
+            if (txtRest != null) txtRest.BringToFront();
+            if (txtMessage != null) txtMessage.BringToFront();
+
+            if (txtAmmo != null) txtAmmo.BringToFront();
+            if (txtScore != null) txtScore.BringToFront();
+            if (label1 != null) label1.BringToFront();
+            if (healthBar != null) healthBar.BringToFront();
         }
 
         private void UpdateWaveTimers()
@@ -323,7 +384,7 @@ namespace Shoot_Out_Game_MOO_ICT
             giantSpawnedThisWave = false;
             giantSpawnAttempts = 0;
             ammoSpawnTimer = 0;
-            nextAmmoSpawnTime = randNum.Next(5000, 10000);
+            nextAmmoSpawnTime = 5000; // Всегда 5 секунд
 
             txtRest.Visible = false;
 
@@ -630,7 +691,7 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void DropAmmo()
         {
-            if (!normalAmmoSpawn || isResting || ammoBoxes.Count >= 5) return;
+            if (!normalAmmoSpawn || isResting || ammoBoxes.Count >= 3) return;
 
             PictureBox ammoBox = new PictureBox();
             ammoBox.Image = Properties.Resources.ammo_Image;
@@ -717,7 +778,6 @@ namespace Shoot_Out_Game_MOO_ICT
                 }
             }
 
-            // Возврат в главное меню
             if (e.KeyCode == Keys.Escape)
             {
                 this.Close();
@@ -769,6 +829,13 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void RestartGame()
         {
+            // Обновляем разрешение перед началом игры
+            this.ClientSize = new Size(MainMenuForm.GameWidth, MainMenuForm.GameHeight);
+            UpdateTextPositionsForResolution();
+
+            // Пересоздаем волновые метки
+            InitializeWaveLabels();
+
             player.Image = Properties.Resources.up;
 
             ClearAllGameObjects();
@@ -784,7 +851,7 @@ namespace Shoot_Out_Game_MOO_ICT
             giantSpawnedThisWave = false;
             giantSpawnAttempts = 0;
             ammoSpawnTimer = 0;
-            nextAmmoSpawnTime = randNum.Next(5000, 10000);
+            nextAmmoSpawnTime = 5000;
 
             if (txtRest != null)
             {

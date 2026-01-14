@@ -30,7 +30,15 @@ namespace Shoot_Out_Game_MOO_ICT
             SelectedRestColor = MainMenuForm.RestRoomColor;
 
             // Устанавливаем выбранные значения в комбобоксы
-            cmbResolution.SelectedIndex = GetResolutionIndex(SelectedWidth, SelectedHeight);
+            int resolutionIndex = GetResolutionIndex(SelectedWidth, SelectedHeight);
+            if (resolutionIndex >= 0 && resolutionIndex < cmbResolution.Items.Count)
+            {
+                cmbResolution.SelectedIndex = resolutionIndex;
+            }
+            else
+            {
+                cmbResolution.SelectedIndex = 3; // По умолчанию 1600x900
+            }
 
             // Устанавливаем цвет
             colorPicker.BackColor = SelectedRestColor;
@@ -65,32 +73,37 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void ApplyResolution()
         {
-            switch (cmbResolution.SelectedIndex)
+            if (cmbResolution.SelectedIndex >= 0)
             {
-                case 0: // 1024x768
-                    SelectedWidth = 1024;
-                    SelectedHeight = 768;
-                    break;
-                case 1: // 1280x720
-                    SelectedWidth = 1280;
-                    SelectedHeight = 720;
-                    break;
-                case 2: // 1366x768
-                    SelectedWidth = 1366;
-                    SelectedHeight = 768;
-                    break;
-                case 3: // 1600x900
-                    SelectedWidth = 1600;
-                    SelectedHeight = 900;
-                    break;
-                case 4: // 1920x1080
-                    SelectedWidth = 1920;
-                    SelectedHeight = 1080;
-                    break;
-                default:
-                    SelectedWidth = 1600;
-                    SelectedHeight = 900;
-                    break;
+                switch (cmbResolution.SelectedIndex)
+                {
+                    case 0: // 1024x768
+                        SelectedWidth = 1024;
+                        SelectedHeight = 768;
+                        break;
+                    case 1: // 1280x720
+                        SelectedWidth = 1280;
+                        SelectedHeight = 720;
+                        break;
+                    case 2: // 1366x768
+                        SelectedWidth = 1366;
+                        SelectedHeight = 768;
+                        break;
+                    case 3: // 1600x900
+                        SelectedWidth = 1600;
+                        SelectedHeight = 900;
+                        break;
+                    case 4: // 1920x1080
+                        SelectedWidth = 1920;
+                        SelectedHeight = 1080;
+                        break;
+                }
+            }
+            else
+            {
+                // Значения по умолчанию
+                SelectedWidth = 1600;
+                SelectedHeight = 900;
             }
         }
 
