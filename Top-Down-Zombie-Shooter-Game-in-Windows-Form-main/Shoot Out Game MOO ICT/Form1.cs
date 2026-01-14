@@ -21,6 +21,7 @@ namespace Shoot_Out_Game_MOO_ICT
         Random randNum = new Random();
         int score;
         List<PictureBox> zombiesList = new List<PictureBox>();
+        Dictionary<PictureBox, int> zombieHealth = new Dictionary<PictureBox, int>();
 
         // Волновая система
         private int wave = 1;
@@ -32,6 +33,10 @@ namespace Shoot_Out_Game_MOO_ICT
         private int zombieCount = 3;
         private int maxZombies = 15;
         private bool normalAmmoSpawn = true;
+        private bool giantSpawnedThisWave = false;
+        private int ammoSpawnTimer = 0;
+        private int nextAmmoSpawnTime = 0; // Время следующего спавна патронов
+        private int giantSpawnAttempts = 0; // Счетчик попыток спавна гиганта
 
         // UI элементы
         private Label txtWave;
@@ -51,7 +56,6 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void InitializeWaveLabels()
         {
-            // Метка волны
             txtWave = new Label();
             txtWave.AutoSize = true;
             txtWave.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
@@ -61,7 +65,6 @@ namespace Shoot_Out_Game_MOO_ICT
             this.Controls.Add(txtWave);
             txtWave.BringToFront();
 
-            // Метка времени волны
             txtTime = new Label();
             txtTime.AutoSize = true;
             txtTime.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
@@ -71,7 +74,6 @@ namespace Shoot_Out_Game_MOO_ICT
             this.Controls.Add(txtTime);
             txtTime.BringToFront();
 
-            // Метка отдыха
             txtRest = new Label();
             txtRest.AutoSize = true;
             txtRest.Font = new Font("Microsoft Sans Serif", 14.25F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(0)));
@@ -116,8 +118,8 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void MainTimerEvent(object sender, EventArgs e)
         {
-            // Обновление таймеров волн
             UpdateWaveTimers();
+            UpdateAmmoSpawn();
 
             if (playerHealth > 1)
             {
@@ -136,11 +138,9 @@ namespace Shoot_Out_Game_MOO_ICT
             txtScore.Text = "Kills: " + score;
             txtWave.Text = "Wave: " + wave;
 
-            // Отображаем время в секундах
             int timeLeftInSeconds = (waveTime - waveTimer) / 50;
             txtTime.Text = "Time: " + Math.Max(0, timeLeftInSeconds);
 
-            // Движение игрока
             if (goLeft == true && player.Left > 0)
             {
                 player.Left -= speed;
@@ -158,23 +158,78 @@ namespace Shoot_Out_Game_MOO_ICT
                 player.Top += speed;
             }
 
-            // Обработка столкновений
             ProcessCollisions();
 
-            // Проверка зомби
+            // Двигаем всех зомби (включая гигантов)
             foreach (Control x in this.Controls)
             {
-                if (x is PictureBox && (string)x.Tag == "zombie")
+                if (x is PictureBox && ((string)x.Tag == "zombie" || (string)x.Tag == "giant"))
                 {
                     MoveZombie((PictureBox)x);
                 }
             }
 
-            // Проверка попадания пуль
             CheckBulletHits();
 
-            // Игрок всегда сверху
+            // Спавн гиганта (только один раз за волну)
+            if (!isResting && !giantSpawnedThisWave && zombiesList.Count > 0 && giantSpawnAttempts < 50)
+            {
+                giantSpawnAttempts++;
+                if (randNum.Next(0, 100) < 5) // 5% шанс каждую проверку
+                {
+                    SpawnGiant();
+                    giantSpawnedThisWave = true;
+                    ShowMessage("Giant zombie appeared!");
+                }
+            }
+
+            UpdateDisplayOrder();
+        }
+
+        private void UpdateAmmoSpawn()
+        {
+            if (!isResting && normalAmmoSpawn && ammo < 10)
+            {
+                ammoSpawnTimer += 20; // 20 мс за тик
+
+                if (ammoSpawnTimer >= nextAmmoSpawnTime)
+                {
+                    ammoSpawnTimer = 0;
+                    nextAmmoSpawnTime = randNum.Next(5000, 10000); // 5-10 секунд в миллисекундах
+
+                    if (ammoBoxes.Count < 5) // Не больше 5 патронов на карте
+                    {
+                        DropAmmo();
+                    }
+                }
+            }
+        }
+
+        private void UpdateDisplayOrder()
+        {
             player.BringToFront();
+
+            foreach (Control c in this.Controls)
+            {
+                if (c is PictureBox && (string)c.Tag == "ammo")
+                {
+                    c.BringToFront();
+                }
+            }
+
+            foreach (Control c in this.Controls)
+            {
+                if (c is PictureBox && (string)c.Tag == "health")
+                {
+                    c.BringToFront();
+                }
+            }
+
+            player.BringToFront();
+            txtWave.BringToFront();
+            txtTime.BringToFront();
+            txtRest.BringToFront();
+            txtMessage.BringToFront();
         }
 
         private void UpdateWaveTimers()
@@ -192,7 +247,6 @@ namespace Shoot_Out_Game_MOO_ICT
             {
                 restTimer += 20;
 
-                // Отображаем время отдыха в секундах
                 int restTimeLeftInSeconds = (restTime - restTimer) / 50;
                 txtRest.Text = "Rest: " + Math.Max(0, restTimeLeftInSeconds);
 
@@ -207,7 +261,6 @@ namespace Shoot_Out_Game_MOO_ICT
         {
             if (!gameOver && !isResting)
             {
-                // МГНОВЕННО завершаем волну
                 waveTimer = waveTime;
                 CompleteWave();
             }
@@ -217,7 +270,6 @@ namespace Shoot_Out_Game_MOO_ICT
         {
             if (!gameOver && isResting)
             {
-                // МГНОВЕННО пропускаем отдых
                 restTimer = restTime;
                 StartNewWave();
             }
@@ -225,57 +277,51 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void CompleteWave()
         {
-            // Волна завершена
             isResting = true;
             restTimer = 0;
             normalAmmoSpawn = false;
             txtRest.Visible = true;
 
-            // Показываем сообщение о завершении волны
             ShowMessage($"Wave {wave} Complete!");
 
-            // Полностью очищаем карту
             ClearAllGameObjects();
-
-            // Спавним предметы для отдыха
             SpawnRestItems();
         }
 
         private void StartNewWave()
         {
-            // Полностью очищаем карту перед новой волной
             ClearAllGameObjects();
 
-            // Начинаем новую волну
             isResting = false;
             waveTimer = 0;
             wave++;
 
-            // Увеличиваем время волны на 10 секунд
             waveTime += 10000;
-
-            // Увеличиваем скорость зомби на 0.3
             zombieSpeed += 0.3;
-
-            // Увеличиваем количество зомби
             zombieCount = Math.Min(3 + wave, maxZombies);
-
             normalAmmoSpawn = true;
+            giantSpawnedThisWave = false;
+            giantSpawnAttempts = 0;
+            ammoSpawnTimer = 0;
+            nextAmmoSpawnTime = randNum.Next(5000, 10000); // Первый спавн через 5-10 секунд
+
             txtRest.Visible = false;
 
-            // Показываем сообщение о начале новой волны
             ShowMessage($"Wave {wave} Started!");
 
-            // Спавним зомби для новой волны
             for (int i = 0; i < zombieCount; i++)
             {
-                MakeZombies();
+                MakeZombie(false);
             }
+        }
+
+        private void SpawnGiant()
+        {
+            MakeZombie(true);
         }
 
         private void SpawnRestItems()
         {
-            // Спавним аптечку (полное восстановление)
             PictureBox healthPack = new PictureBox();
             healthPack.Image = Properties.Resources.up;
             healthPack.BackColor = Color.Lime;
@@ -288,7 +334,6 @@ namespace Shoot_Out_Game_MOO_ICT
             healthPack.BringToFront();
             healthBoxes.Add(healthPack);
 
-            // Спавним 10 патронов
             for (int i = 0; i < 10; i++)
             {
                 PictureBox ammoBox = new PictureBox();
@@ -326,17 +371,17 @@ namespace Shoot_Out_Game_MOO_ICT
 
             foreach (Control x in this.Controls)
             {
-                // Сбор патронов
                 if (x is PictureBox && (string)x.Tag == "ammo")
                 {
                     if (player.Bounds.IntersectsWith(x.Bounds))
                     {
                         toRemove.Add(x);
                         ammo += 5;
+                        if (ammo > 20) ammo = 20; // Лимит патронов
+                        ShowMessage("+5 Ammo!", 1000);
                     }
                 }
 
-                // Сбор аптечек (только во время отдыха)
                 if (x is PictureBox && (string)x.Tag == "health" && isResting)
                 {
                     if (player.Bounds.IntersectsWith(x.Bounds))
@@ -349,7 +394,6 @@ namespace Shoot_Out_Game_MOO_ICT
                 }
             }
 
-            // Удаляем собранные предметы
             foreach (Control item in toRemove)
             {
                 this.Controls.Remove(item);
@@ -374,8 +418,16 @@ namespace Shoot_Out_Game_MOO_ICT
 
             if (!isResting)
             {
-                int moveSpeed = (int)Math.Round(zombieSpeed);
+                // Определяем скорость для этого зомби
+                double currentZombieSpeed = zombieSpeed;
+                if ((string)zombie.Tag == "giant")
+                {
+                    currentZombieSpeed = Math.Max(1.0, zombieSpeed - 0.3); // Гигант медленнее, но минимум 1.0
+                }
 
+                int moveSpeed = (int)Math.Round(currentZombieSpeed);
+
+                // Движение гиганта идентично обычному зомби
                 if (zombie.Left > player.Left)
                 {
                     zombie.Left -= moveSpeed;
@@ -406,7 +458,7 @@ namespace Shoot_Out_Game_MOO_ICT
 
             foreach (Control x in this.Controls)
             {
-                if (x is PictureBox && (string)x.Tag == "zombie")
+                if (x is PictureBox && ((string)x.Tag == "zombie" || (string)x.Tag == "giant"))
                 {
                     foreach (Control j in this.Controls)
                     {
@@ -414,9 +466,37 @@ namespace Shoot_Out_Game_MOO_ICT
                         {
                             if (x.Bounds.IntersectsWith(j.Bounds))
                             {
-                                score++;
                                 bulletsToRemove.Add(j);
-                                zombiesToRemove.Add(x);
+
+                                if (zombieHealth.ContainsKey((PictureBox)x))
+                                {
+                                    zombieHealth[(PictureBox)x]--;
+
+                                    if (zombieHealth[(PictureBox)x] <= 0)
+                                    {
+                                        zombiesToRemove.Add(x);
+                                        score++;
+
+                                        if ((string)x.Tag == "giant")
+                                        {
+                                            ShowMessage("Giant defeated! +10 score", 1500);
+                                            score += 9; // Всего +10 за гиганта
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // Ранен, но не убит
+                                        if ((string)x.Tag == "giant")
+                                        {
+                                            ((PictureBox)x).BackColor = Color.Orange;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    zombiesToRemove.Add(x);
+                                    score++;
+                                }
                             }
                         }
                     }
@@ -434,25 +514,25 @@ namespace Shoot_Out_Game_MOO_ICT
                 this.Controls.Remove(zombie);
                 zombie.Dispose();
                 zombiesList.Remove((PictureBox)zombie);
+                zombieHealth.Remove((PictureBox)zombie);
 
                 if (!isResting && zombiesList.Count < zombieCount)
                 {
-                    MakeZombies();
+                    MakeZombie(false);
                 }
             }
         }
 
         private void ClearAllGameObjects()
         {
-            // Очищаем зомби
             foreach (PictureBox zombie in zombiesList.ToList())
             {
                 this.Controls.Remove(zombie);
                 zombie.Dispose();
             }
             zombiesList.Clear();
+            zombieHealth.Clear();
 
-            // Очищаем патроны
             foreach (PictureBox ammoBox in ammoBoxes.ToList())
             {
                 this.Controls.Remove(ammoBox);
@@ -460,7 +540,6 @@ namespace Shoot_Out_Game_MOO_ICT
             }
             ammoBoxes.Clear();
 
-            // Очищаем аптечки
             foreach (PictureBox healthBox in healthBoxes.ToList())
             {
                 this.Controls.Remove(healthBox);
@@ -468,7 +547,6 @@ namespace Shoot_Out_Game_MOO_ICT
             }
             healthBoxes.Clear();
 
-            // Очищаем все пули
             List<Control> bulletsToRemove = new List<Control>();
             foreach (Control c in this.Controls)
             {
@@ -484,6 +562,99 @@ namespace Shoot_Out_Game_MOO_ICT
             }
         }
 
+        private void MakeZombie(bool isGiant)
+        {
+            PictureBox zombie = new PictureBox();
+
+            if (isGiant)
+            {
+                zombie.Tag = "giant";
+                zombie.BackColor = Color.FromArgb(255, 100, 100); // Красноватый цвет
+                zombieHealth[zombie] = 2;
+            }
+            else
+            {
+                zombie.Tag = "zombie";
+                zombieHealth[zombie] = 1;
+            }
+
+            zombie.Image = Properties.Resources.zdown;
+
+            int spawnX, spawnY;
+            int attempts = 0;
+            do
+            {
+                spawnX = randNum.Next(100, this.ClientSize.Width - 150);
+                spawnY = randNum.Next(150, this.ClientSize.Height - 150);
+                attempts++;
+
+                if (attempts > 30) break;
+
+            } while (Math.Abs(spawnX - player.Left) < 300 && Math.Abs(spawnY - player.Top) < 300);
+
+            zombie.Left = spawnX;
+            zombie.Top = spawnY;
+
+            if (isGiant)
+            {
+                // Гигант больше, но использует те же спрайты
+                zombie.SizeMode = PictureBoxSizeMode.StretchImage;
+                zombie.Size = new Size(100, 140);
+            }
+            else
+            {
+                zombie.SizeMode = PictureBoxSizeMode.AutoSize;
+            }
+
+            zombiesList.Add(zombie);
+            this.Controls.Add(zombie);
+
+            UpdateDisplayOrder();
+        }
+
+        private void DropAmmo()
+        {
+            if (!normalAmmoSpawn || isResting || ammoBoxes.Count >= 5) return;
+
+            PictureBox ammoBox = new PictureBox();
+            ammoBox.Image = Properties.Resources.ammo_Image;
+            ammoBox.SizeMode = PictureBoxSizeMode.AutoSize;
+
+            int attempts = 0;
+            int x, y;
+            bool validPosition;
+
+            do
+            {
+                validPosition = true;
+                x = randNum.Next(100, this.ClientSize.Width - 150);
+                y = randNum.Next(150, this.ClientSize.Height - 150);
+                attempts++;
+
+                // Проверяем, чтобы не было слишком близко к другим патронам
+                foreach (PictureBox existingAmmo in ammoBoxes)
+                {
+                    if (Math.Abs(x - existingAmmo.Left) < 60 && Math.Abs(y - existingAmmo.Top) < 60)
+                    {
+                        validPosition = false;
+                        break;
+                    }
+                }
+
+                if (attempts > 20) break;
+
+            } while (!validPosition);
+
+            ammoBox.Left = x;
+            ammoBox.Top = y;
+            ammoBox.Tag = "ammo";
+
+            this.Controls.Add(ammoBox);
+            ammoBoxes.Add(ammoBox);
+
+            UpdateDisplayOrder();
+        }
+
         private void KeyIsDown(object sender, KeyEventArgs e)
         {
             if (gameOver == true)
@@ -491,7 +662,6 @@ namespace Shoot_Out_Game_MOO_ICT
                 return;
             }
 
-            // Управление стрелками ИЛИ WASD
             if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
             {
                 goLeft = true;
@@ -520,17 +690,14 @@ namespace Shoot_Out_Game_MOO_ICT
                 player.Image = Properties.Resources.down;
             }
 
-            // Пропуск волны/отдыха по клавише + (Numpad + или обычный +)
             if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
             {
                 if (!isResting && !gameOver)
                 {
-                    // МГНОВЕННО пропускаем волну
                     SkipCurrentWave();
                 }
                 else if (isResting && !gameOver)
                 {
-                    // МГНОВЕННО пропускаем отдых
                     SkipCurrentRest();
                 }
             }
@@ -538,7 +705,6 @@ namespace Shoot_Out_Game_MOO_ICT
 
         private void KeyIsUp(object sender, KeyEventArgs e)
         {
-            // Управление стрелками ИЛИ WASD
             if (e.KeyCode == Keys.Left || e.KeyCode == Keys.A)
             {
                 goLeft = false;
@@ -559,19 +725,12 @@ namespace Shoot_Out_Game_MOO_ICT
                 goDown = false;
             }
 
-            // Стрельба пробелом
             if (e.KeyCode == Keys.Space && ammo > 0 && gameOver == false)
             {
                 ammo--;
                 ShootBullet(facing);
-
-                if (ammo < 5 && normalAmmoSpawn && randNum.Next(1, 10) > 7 && !isResting)
-                {
-                    DropAmmo();
-                }
             }
 
-            // Перезапуск игры
             if (e.KeyCode == Keys.Enter && gameOver == true)
             {
                 RestartGame();
@@ -587,59 +746,12 @@ namespace Shoot_Out_Game_MOO_ICT
             shootBullet.MakeBullet(this);
         }
 
-        private void MakeZombies()
-        {
-            PictureBox zombie = new PictureBox();
-            zombie.Tag = "zombie";
-            zombie.Image = Properties.Resources.zdown;
-
-            int spawnX, spawnY;
-            int attempts = 0;
-            do
-            {
-                spawnX = randNum.Next(100, this.ClientSize.Width - 150);
-                spawnY = randNum.Next(150, this.ClientSize.Height - 150);
-                attempts++;
-
-                if (attempts > 30) break;
-
-            } while (Math.Abs(spawnX - player.Left) < 300 && Math.Abs(spawnY - player.Top) < 300);
-
-            zombie.Left = spawnX;
-            zombie.Top = spawnY;
-            zombie.SizeMode = PictureBoxSizeMode.AutoSize;
-            zombiesList.Add(zombie);
-            this.Controls.Add(zombie);
-            player.BringToFront();
-        }
-
-        private void DropAmmo()
-        {
-            if (!normalAmmoSpawn || isResting) return;
-
-            PictureBox ammoBox = new PictureBox();
-            ammoBox.Image = Properties.Resources.ammo_Image;
-            ammoBox.SizeMode = PictureBoxSizeMode.AutoSize;
-
-            ammoBox.Left = randNum.Next(100, this.ClientSize.Width - 150);
-            ammoBox.Top = randNum.Next(150, this.ClientSize.Height - 150);
-            ammoBox.Tag = "ammo";
-
-            this.Controls.Add(ammoBox);
-            ammoBoxes.Add(ammoBox);
-
-            ammoBox.BringToFront();
-            player.BringToFront();
-        }
-
         private void RestartGame()
         {
             player.Image = Properties.Resources.up;
 
-            // Полностью очищаем все игровые объекты
             ClearAllGameObjects();
 
-            // Сброс волновой системы
             wave = 1;
             waveTime = 60000;
             waveTimer = 0;
@@ -648,6 +760,10 @@ namespace Shoot_Out_Game_MOO_ICT
             zombieSpeed = 3.0;
             zombieCount = 3;
             normalAmmoSpawn = true;
+            giantSpawnedThisWave = false;
+            giantSpawnAttempts = 0;
+            ammoSpawnTimer = 0;
+            nextAmmoSpawnTime = randNum.Next(5000, 10000);
 
             if (txtRest != null)
             {
@@ -658,10 +774,9 @@ namespace Shoot_Out_Game_MOO_ICT
             if (txtWave != null) txtWave.Text = "Wave: 1";
             if (txtMessage != null) txtMessage.Visible = false;
 
-            // Спавним начальных зомби
             for (int i = 0; i < zombieCount; i++)
             {
-                MakeZombies();
+                MakeZombie(false);
             }
 
             goUp = false;
@@ -675,7 +790,6 @@ namespace Shoot_Out_Game_MOO_ICT
             score = 0;
             ammo = 10;
 
-            // Показываем приветственное сообщение
             ShowMessage("Get Ready!\nWave 1 Starting...", 2000);
 
             GameTimer.Start();

@@ -107,7 +107,7 @@
             this.Controls.Add(this.txtScore);
             this.Controls.Add(this.txtAmmo);
             this.Name = "Form1";
-            this.Text = "Zombie Shootout - WASD/Arrows to move";
+            this.Text = "Zombie Shootout Game";
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.KeyIsDown);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.KeyIsUp);
             ((System.ComponentModel.ISupportInitialize)(this.player)).EndInit();
