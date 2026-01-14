@@ -1,0 +1,12 @@
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\bin\Debug\Shoot Out Game MOO ICT.exe.config
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\bin\Debug\Shoot Out Game MOO ICT.exe
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\bin\Debug\Shoot Out Game MOO ICT.pdb
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Zombie Army 2D.csproj.AssemblyReference.cache
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Shoot Out Game MOO ICT.exe.config
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Shoot_Out_Game_MOO_ICT.Form1.resources
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Shoot_Out_Game_MOO_ICT.Properties.Resources.resources
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Zombie Army 2D.csproj.GenerateResource.cache
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Zombie Army 2D.csproj.CoreCompileInputs.cache
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Shoot Out Game MOO ICT.exe
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Shoot Out Game MOO ICT.pdb
+C:\Users\Denis\source\repos\Top-Down-Zombie-Shooter-Game-in-Windows-Form-main\Shoot Out Game MOO ICT\obj\Debug\Shoot_Out_Game_MOO_ICT.MainMenuForm.resources

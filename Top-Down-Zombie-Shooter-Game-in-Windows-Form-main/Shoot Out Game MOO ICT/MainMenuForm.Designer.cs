@@ -84,7 +84,7 @@ namespace Shoot_Out_Game_MOO_ICT
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(700, 120);
             this.label1.TabIndex = 3;
-            this.label1.Text = "ZOMBIE SHOOTOUT";
+            this.label1.Text = "Zombie Army 2D";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // MainMenuForm
@@ -98,7 +98,7 @@ namespace Shoot_Out_Game_MOO_ICT
             this.Controls.Add(this.btnSettings);
             this.Controls.Add(this.btnStart);
             this.Name = "MainMenuForm";
-            this.Text = "Zombie Shootout - Main Menu";
+            this.Text = "Zombie Army 2D - Main Menu";
             this.Load += new System.EventHandler(this.MainMenuForm_Load);
             this.ResumeLayout(false);
 
